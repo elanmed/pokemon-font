@@ -1,8 +1,12 @@
+import { parseArgs } from "node:util";
+import { options } from "./parse-args-opts";
+
 async function main() {
   const args = process.argv.slice(2);
+  const { values } = parseArgs({ args, options });
 
-  if (!args[0]) {
-    throw new Error("Usage: run.sh [pokemon name]");
+  if (!values.pokemon) {
+    throw new Error("TODO");
   }
 
   const numPokemonRes = await fetch("https://pokeapi.co/api/v2/pokemon");
@@ -19,7 +23,7 @@ async function main() {
     ),
   );
 
-  if (!allPokemon.has(args[0])) {
+  if (!allPokemon.has(values.pokemon!)) {
     throw new Error("Invalid pokemon name");
   }
 }

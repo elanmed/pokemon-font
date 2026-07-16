@@ -3,13 +3,16 @@ import { GifUtil } from "gifwrap";
 import { PNG } from "pngjs";
 import { join } from "node:path";
 import assert from "node:assert";
+import { parseArgs } from "node:util";
+import { options } from "./parse-args-opts";
 
 async function main() {
   const args = process.argv.slice(2);
-  assert(args[0]);
+  const { values } = parseArgs({ args, options });
+  assert(values.pokemon);
 
   const pokemonRes = await fetch(
-    `https://pokeapi.co/api/v2/pokemon/${args[0]}`,
+    `https://pokeapi.co/api/v2/pokemon/${values.pokemon}`,
   );
   const pokemonData = await pokemonRes.json();
   const animationUrl = (
