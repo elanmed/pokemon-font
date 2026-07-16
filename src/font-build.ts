@@ -2,17 +2,14 @@
 import { parseArgs } from "node:util";
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { options } from "./parse-args-opts";
-
-const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const nanoemojiBinaryPath = join(
-  scriptDirectory,
-  "nanoemoji-env",
-  "bin",
-  "nanoemoji",
-);
+import {
+  BUILD_DIR,
+  NANOEMOJI_BIN,
+  NANOEMOJI_BIN_DIR,
+  PROCESSED_ASSETS_DIR,
+} from "./paths";
+import { join } from "node:path";
 
 const args = process.argv.slice(2);
 const { values } = parseArgs({ args, options });
@@ -23,17 +20,16 @@ if (!fontFamily) {
   process.exit(1);
 }
 
-const svgsDirectory = join(scriptDirectory, "processed-assets");
-const emojiSvgPaths = readdirSync(svgsDirectory)
+const emojiSvgPaths = readdirSync(PROCESSED_ASSETS_DIR)
   .filter(
     (fileName) => fileName.startsWith("emoji_u") && fileName.endsWith(".svg"),
   )
-  .map((fileName) => join(svgsDirectory, fileName));
+  .map((fileName) => join(PROCESSED_ASSETS_DIR, fileName));
 
 const outputFilePath = `${fontFamily}.ttf`;
 
 const nanoemojiResult = spawnSync(
-  nanoemojiBinaryPath,
+  NANOEMOJI_BIN,
   [
     "--color_format",
     "sbix",
@@ -47,7 +43,7 @@ const nanoemojiResult = spawnSync(
     stdio: "inherit",
     env: {
       ...process.env,
-      PATH: `${join(scriptDirectory, "nanoemoji-env", "bin")}:${process.env.PATH}`,
+      PATH: `${NANOEMOJI_BIN_DIR}:${process.env.PATH}`,
     },
   },
 );
@@ -56,4 +52,4 @@ if (nanoemojiResult.status !== 0) {
   process.exit(nanoemojiResult.status ?? 1);
 }
 
-console.log(`${outputFilePath} written to ${join(scriptDirectory, "build")}`);
+console.log(`${outputFilePath} written to ${BUILD_DIR}`);

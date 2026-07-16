@@ -5,6 +5,7 @@ import { join } from "node:path";
 import assert from "node:assert";
 import { parseArgs } from "node:util";
 import { options } from "./parse-args-opts";
+import { PROCESSED_ASSETS_DIR } from "./paths";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -46,7 +47,7 @@ async function main() {
     const framePngBase64 = framePngBuffer.toString("base64");
     const frameSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${frame.bitmap.width}" height="${frame.bitmap.height}" viewBox="0 0 ${frame.bitmap.width} ${frame.bitmap.height}"><image width="${frame.bitmap.width}" height="${frame.bitmap.height}" href="data:image/png;base64,${framePngBase64}"/></svg>`;
     writeFileSync(
-      join("processed-assets", `emoji_u${codepointHex}.svg`),
+      join(PROCESSED_ASSETS_DIR, `emoji_u${codepointHex}.svg`),
       frameSvg,
     );
   }
