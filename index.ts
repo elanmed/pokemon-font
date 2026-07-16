@@ -2,8 +2,12 @@ import { writeFileSync } from "node:fs";
 import { GifUtil } from "gifwrap";
 import { PNG } from "pngjs";
 import { join } from "node:path";
+import assert from "node:assert";
 
 async function main() {
+  const args = process.argv.slice(2);
+  assert(args[0]);
+
   const res = await fetch(
     "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/142.gif",
   );
@@ -27,4 +31,5 @@ async function main() {
     writeFileSync(join("svgs", `emoji_u${codepointHex}.svg`), frameSvg);
   }
 }
+
 main();
