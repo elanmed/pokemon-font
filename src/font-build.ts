@@ -10,15 +10,13 @@ import {
   PROCESSED_ASSETS_DIR,
 } from "./paths";
 import { join } from "node:path";
+import assert from "node:assert";
 
 const args = process.argv.slice(2);
 const { values } = parseArgs({ args, options });
 
 const fontFamily = values["font-name"] ?? values.pokemon;
-if (!fontFamily) {
-  console.error("Must provide --pokemon or --font-name");
-  process.exit(1);
-}
+assert(fontFamily);
 
 const emojiSvgPaths = readdirSync(PROCESSED_ASSETS_DIR)
   .filter(

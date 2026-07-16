@@ -3,9 +3,9 @@
   "scripts": {
     "venv-create": "python3 -m venv nanoemoji-env",
     "venv-install": "nanoemoji-env/bin/pip install nanoemoji",
-    "font-download": "bun run index.ts",
-    "font-build": "./build-font.sh",
-    "args-assert": "bun run args-assert.ts"
+    "font-download": "bun run src/font-download.ts",
+    "font-build": ".bun run src/font-build.ts",
+    "args-assert": "bun run src/args-assert.ts"
   },
   "module": "index.ts",
   "type": "module",

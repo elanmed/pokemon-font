@@ -5,8 +5,13 @@ async function main() {
   const args = process.argv.slice(2);
   const { values } = parseArgs({ args, options });
 
-  if (!values.pokemon) {
-    console.error("Must provide --pokemon or --font-name");
+  if (values.help || !values.pokemon) {
+    console.log(`Usage: run.sh [options]
+
+Options:
+  -p, --pokemon <name>     Validate a Pokémon name
+  -f, --font-name <name>   Specify a font name
+  -h, --help               Show this help message`);
     process.exit(1);
   }
 
