@@ -6,7 +6,8 @@ async function main() {
   const { values } = parseArgs({ args, options });
 
   if (!values.pokemon) {
-    throw new Error("TODO");
+    console.error("Must provide --pokemon or --font-name");
+    process.exit(1);
   }
 
   const numPokemonRes = await fetch("https://pokeapi.co/api/v2/pokemon");
@@ -23,8 +24,9 @@ async function main() {
     ),
   );
 
-  if (!allPokemon.has(values.pokemon!)) {
-    throw new Error("Invalid pokemon name");
+  if (!allPokemon.has(values.pokemon)) {
+    console.error("Invalid pokemon name");
+    process.exit(1);
   }
 }
 

@@ -45,7 +45,10 @@ async function main() {
     const framePngBuffer = PNG.sync.write(framePng);
     const framePngBase64 = framePngBuffer.toString("base64");
     const frameSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${frame.bitmap.width}" height="${frame.bitmap.height}" viewBox="0 0 ${frame.bitmap.width} ${frame.bitmap.height}"><image width="${frame.bitmap.width}" height="${frame.bitmap.height}" href="data:image/png;base64,${framePngBase64}"/></svg>`;
-    writeFileSync(join("svgs", `emoji_u${codepointHex}.svg`), frameSvg);
+    writeFileSync(
+      join("processed-assets", `emoji_u${codepointHex}.svg`),
+      frameSvg,
+    );
   }
 }
 
