@@ -8,13 +8,27 @@ async function main() {
   const args = process.argv.slice(2);
   assert(args[0]);
 
-  const res = await fetch(
-    "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/142.gif",
+  const pokemonRes = await fetch(
+    `https://pokeapi.co/api/v2/pokemon/${args[0]}`,
   );
-  const blob = await res.blob();
-  const arrayBuffer = await blob.arrayBuffer();
-  writeFileSync("aerodactyl.gif", Buffer.from(arrayBuffer));
-  const gif = await GifUtil.read("aerodactyl.gif");
+  const pokemonData = await pokemonRes.json();
+  const animationUrl = (
+    pokemonData as {
+      sprites: {
+        versions: {
+          ["generation-v"]: {
+            ["black-white"]: { animated: { front_default: string } };
+          };
+        };
+      };
+    }
+  ).sprites.versions["generation-v"]["black-white"].animated.front_default;
+
+  const animationRes = await fetch(animationUrl);
+  const animationBlob = await animationRes.blob();
+  const animationArrayBuffer = await animationBlob.arrayBuffer();
+  writeFileSync(`${args[0]}.gif`, Buffer.from(animationArrayBuffer));
+  const gif = await GifUtil.read(`${args[0]}.gif`);
   const privateUseAreaStart = 0x100000;
 
   for (const [frameIndex, frame] of gif.frames.entries()) {
