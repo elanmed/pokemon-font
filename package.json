@@ -1,0 +1,25 @@
+{
+  "name": "pokemon-font",
+  "scripts": {
+    "venv:create": "python3 -m venv nanoemoji-env",
+    "venv:install": "nanoemoji-env/bin/pip install nanoemoji",
+    "venv:setup": "bun venv:create && bun venv:install",
+    "font:extract": "bun run index.ts",
+    "font:build": "./build-font.sh",
+    "font:all": "bun font:extract && bun font:build"
+  },
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "gifwrap": "^0.10.1",
+    "jimp": "^1.6.1",
+    "pngjs": "^7.0.0"
+  }
+}
