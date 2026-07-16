@@ -2,3 +2,5 @@ node_modules
 build
 nanoemoji-env
 tags
+processed-assets
+raw-assets
