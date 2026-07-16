@@ -10,4 +10,4 @@ bun run args-assert -- "$@"
 bun run venv-create
 bun run venv-install
 bun run font-download -- "$@"
-bun run font-build
+bun run font-build -- "$@"

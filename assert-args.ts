@@ -1,5 +1,6 @@
 async function main() {
   const args = process.argv.slice(2);
+
   if (!args[0]) {
     throw new Error("Usage: run.sh [pokemon name]");
   }
