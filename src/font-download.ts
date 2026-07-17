@@ -132,10 +132,11 @@ async function cropTransparentBuffer(buffer: Buffer) {
 
   const cropWidth = maxX - minX + 1;
   const cropHeight = maxY - minY + 1;
+  const cropSquare = Math.max(cropWidth, cropHeight);
 
   const cropped = new PNG({
-    width: cropWidth,
-    height: cropHeight,
+    width: cropSquare,
+    height: cropSquare,
   });
 
   PNG.bitblt(png, cropped, minX, minY, cropWidth, cropHeight, 0, 0);
