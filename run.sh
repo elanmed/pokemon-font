@@ -12,3 +12,4 @@ bun run venv-install
 bun run font-download -- "$@"
 bun run font-build -- "$@"
 bun run font-copy -- "$@"
+bun run font-install -- "$@"

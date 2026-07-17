@@ -6,6 +6,7 @@
     "font-download": "bun run src/font-download.ts",
     "font-build": "bun run src/font-build.ts",
     "font-copy": "bun run src/font-copy.ts",
+    "font-install": "bun run src/font-install.ts",
     "args-assert": "bun run src/args-assert.ts"
   },
   "module": "index.ts",
