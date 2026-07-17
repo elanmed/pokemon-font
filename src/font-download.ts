@@ -1,15 +1,23 @@
-import { writeFileSync } from "node:fs";
 import { GifUtil } from "gifwrap";
 import { PNG } from "pngjs";
 import { join } from "node:path";
 import { PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR } from "./paths";
 import { getDefaultedArgs } from "./args-parse";
-import { writeFile } from "node:fs/promises";
+import { writeFile, rm } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 
 const privateUseAreaStart = 0x100000;
 
+async function resetDirectory(directoryPath: string) {
+  await rm(directoryPath, { force: true, recursive: true });
+  await mkdir(directoryPath);
+  await writeFile(join(directoryPath, ".gitkeep"), "");
+}
+
 async function main() {
   const args = getDefaultedArgs(process.argv);
+
+  await Promise.all([PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR].map(resetDirectory));
 
   let frameOffset = 0;
   for (let id = 1; id <= 151; id++) {

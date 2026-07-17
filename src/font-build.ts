@@ -25,6 +25,10 @@ const nanoemojiResult = spawnSync(
   [
     "--color_format",
     "sbix",
+    "--bitmap_resolution",
+    "160",
+    "--upem",
+    "160",
     "--family",
     args.fontFamily,
     "--output_file",
