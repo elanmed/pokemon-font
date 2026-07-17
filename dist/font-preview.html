@@ -1,31 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<style>
-  @font-face {
-    font-family: "Pokemon 151";
-    src: url("Pokemon 151.ttf") format("truetype");
-  }
-  span {
-    font-family: "Pokemon 151", sans-serif;
-    font-size: 48px;
-  }
-</style>
-</head>
-<body>
-<div id="glyphContainer"></div>
-<script>
-  const privateUseAreaStart = 0x100000;
-  const totalGlyphCount = 151;
-  const glyphContainerElement = document.getElementById("glyphContainer");
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Pokemon 151";
+        src: url("Pokemon 151.ttf") format("truetype");
+      }
+      span {
+        font-family: "Pokemon 151", sans-serif;
+        font-size: 128px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="glyphContainer"></div>
+    <script>
+      const privateUseAreaStart = 0x100000;
+      const totalGlyphCount = 151;
+      const glyphContainerElement = document.getElementById("glyphContainer");
 
-  for (let glyphIndex = 0; glyphIndex < totalGlyphCount; glyphIndex++) {
-    const character = String.fromCodePoint(privateUseAreaStart + glyphIndex);
-    const glyphElement = document.createElement("span");
-    glyphElement.textContent = `${character} aA`;
-    glyphContainerElement.appendChild(glyphElement);
-  }
-</script>
-</body>
+      for (let glyphIndex = 0; glyphIndex < totalGlyphCount; glyphIndex++) {
+        const character = String.fromCodePoint(
+          privateUseAreaStart + glyphIndex,
+        );
+        const glyphElement = document.createElement("span");
+        glyphElement.textContent = `${character}`;
+        glyphContainerElement.appendChild(glyphElement);
+
+        const charElement = document.createElement("span");
+        charElement.textContent = "aA";
+        glyphContainerElement.appendChild(charElement);
+
+        const brElement = document.createElement("br");
+        glyphContainerElement.appendChild(brElement);
+      }
+    </script>
+  </body>
 </html>
