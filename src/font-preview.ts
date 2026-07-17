@@ -13,7 +13,7 @@ Bun.serve({
     const requestedPath =
       requestUrl.pathname === "/"
         ? "font-preview.html"
-        : requestUrl.pathname.slice(1);
+        : decodeURIComponent(requestUrl.pathname.slice(1));
     const filePath = join(DIST_DIR, requestedPath);
     const file = Bun.file(filePath);
     return new Response(file);
