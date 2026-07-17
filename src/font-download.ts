@@ -62,7 +62,7 @@ async function main() {
 
       const png = PNG.sync.read(croppedPngBuffer);
       const svg = pngToSvg({
-        png: pngBuffer,
+        png: croppedPngBuffer,
         width: png.width,
         height: png.height,
       });
@@ -119,9 +119,9 @@ async function cropTransparentBuffer(buffer: Buffer) {
 
       if (alpha !== 0) {
         minX = Math.min(x, minX);
-        minY = Math.min(x, minY);
+        minY = Math.min(y, minY);
         maxX = Math.max(x, maxX);
-        maxY = Math.max(x, maxY);
+        maxY = Math.max(y, maxY);
       }
     }
   }
