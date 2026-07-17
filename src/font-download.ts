@@ -4,7 +4,7 @@ import { PNG } from "pngjs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { options } from "./parse-args-opts";
-import { PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR } from "./paths";
+import { PROCESSED_ASSETS_DIR } from "./paths";
 
 const privateUseAreaStart = 0x100000;
 
@@ -20,10 +20,10 @@ async function main() {
 
       const animationRes = await fetch(animationUrl);
       const animationBlob = await animationRes.blob();
-      const animationArrayBuffer = await animationBlob.arrayBuffer();
-      const gifPath = join(RAW_ASSETS_DIR, `${id}.gif`);
-      writeFileSync(gifPath, Buffer.from(animationArrayBuffer));
-      const gif = await GifUtil.read(gifPath);
+      const animationArrayBuffer = Buffer.from(
+        await animationBlob.arrayBuffer(),
+      );
+      const gif = await GifUtil.read(animationArrayBuffer);
 
       for (const [frameIdx, frame] of gif.frames.entries()) {
         const framePng = new PNG({
@@ -31,7 +31,7 @@ async function main() {
           height: frame.bitmap.height,
         });
         frame.bitmap.data.copy(framePng.data);
-        const framePngBuffer = PNG.sync.write(framePng);
+        const framePngBuffer = Buffer.from(PNG.sync.write(framePng));
         const svg = pngToSvg({
           png: framePngBuffer,
           width: frame.bitmap.width,
@@ -44,7 +44,13 @@ async function main() {
       const pngRes = await fetch(pngUrl);
       const pngBlob = await pngRes.blob();
       const pngArrayBuffer = await pngBlob.arrayBuffer();
-      const svg = pngToSvg({ png: pngArrayBuffer });
+      const pngBuffer = Buffer.from(pngArrayBuffer);
+      const png = PNG.sync.read(pngBuffer);
+      const svg = pngToSvg({
+        png: pngBuffer,
+        width: png.width,
+        height: png.height,
+      });
       writeSvg({ svg, offset: idx });
     }
   }
@@ -55,7 +61,7 @@ function pngToSvg({
   width,
   height,
 }: {
-  png: Buffer<ArrayBufferLike>;
+  png: Buffer<ArrayBuffer>;
   width: number;
   height: number;
 }) {
