@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <style>
+      html {
+        padding: 12px;
+      }
       @font-face {
         font-family: "Pokemon 151";
         src: url("Pokemon 151.ttf") format("truetype");
@@ -10,7 +13,11 @@
       span {
         font-family: "Pokemon 151", sans-serif;
         font-size: 48px;
-        vertical-align: middle;
+      }
+      #glyphContainer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 48px;
       }
     </style>
   </head>
@@ -21,6 +28,10 @@
       const totalGlyphCount = 151;
       const glyphContainerElement = document.getElementById("glyphContainer");
 
+      const charElement = document.createElement("span");
+      charElement.textContent = "aA";
+      glyphContainerElement.appendChild(charElement);
+
       for (let glyphIndex = 0; glyphIndex < totalGlyphCount; glyphIndex++) {
         const character = String.fromCodePoint(
           privateUseAreaStart + glyphIndex,
@@ -28,13 +39,6 @@
         const glyphElement = document.createElement("span");
         glyphElement.textContent = `${character}`;
         glyphContainerElement.appendChild(glyphElement);
-
-        const charElement = document.createElement("span");
-        charElement.textContent = "aA";
-        glyphContainerElement.appendChild(charElement);
-
-        const brElement = document.createElement("br");
-        glyphContainerElement.appendChild(brElement);
       }
     </script>
   </body>
