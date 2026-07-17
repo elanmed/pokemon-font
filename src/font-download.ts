@@ -39,15 +39,15 @@ async function main() {
         });
         frame.bitmap.data.copy(framePng.data);
         const framePngBuffer = Buffer.from(PNG.sync.write(framePng));
-        const croppedPngBuffer = await cropTransparentBuffer(framePngBuffer);
+        // const croppedPngBuffer = await cropTransparentBuffer(framePngBuffer);
 
         const svg = pngToSvg({
-          png: croppedPngBuffer,
+          png: framePngBuffer,
           width: frame.bitmap.width,
           height: frame.bitmap.height,
         });
         await writeAssets({
-          png: croppedPngBuffer.toString(),
+          png: framePngBuffer,
           svg,
           offset: frameOffset,
         });
@@ -66,7 +66,7 @@ async function main() {
         width: png.width,
         height: png.height,
       });
-      await writeAssets({ png: pngBuffer.toString(), svg, offset: idx });
+      await writeAssets({ png: pngBuffer, svg, offset: idx });
     }
   }
 }
@@ -93,7 +93,7 @@ async function writeAssets({
 }: {
   offset: number;
   svg: string;
-  png: string;
+  png: Buffer;
 }) {
   const codepoint = privateUseAreaStart + offset;
   const codepointHex = codepoint.toString(16).padStart(4, "0");
