@@ -1,8 +1,6 @@
 #!/usr/bin/env node
-import { parseArgs } from "node:util";
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
-import { options } from "./parse-args-opts";
 import {
   BUILD_DIR,
   NANOEMOJI_BIN,
@@ -10,13 +8,9 @@ import {
   PROCESSED_ASSETS_DIR,
 } from "./paths";
 import { join } from "node:path";
+import { getDefaultedArgs } from "./args-parse";
 
-const args = process.argv.slice(2);
-const { values } = parseArgs({ args, options });
-
-const animated = values.animated ?? false;
-const defaultName = animated ? "Pokemon 151 (Animated)" : "Pokemon 151";
-const fontFamily = values["font-name"] ?? defaultName;
+const args = getDefaultedArgs(process.argv);
 
 const emojiSvgPaths = readdirSync(PROCESSED_ASSETS_DIR)
   .filter(
@@ -24,7 +18,7 @@ const emojiSvgPaths = readdirSync(PROCESSED_ASSETS_DIR)
   )
   .map((fileName) => join(PROCESSED_ASSETS_DIR, fileName));
 
-const outputFilePath = `${fontFamily}.ttf`;
+const outputFilePath = `${args.fontFamily}.ttf`;
 
 const nanoemojiResult = spawnSync(
   NANOEMOJI_BIN,
@@ -32,7 +26,7 @@ const nanoemojiResult = spawnSync(
     "--color_format",
     "sbix",
     "--family",
-    fontFamily,
+    args.fontFamily,
     "--output_file",
     outputFilePath,
     ...emojiSvgPaths,

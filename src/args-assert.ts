@@ -1,9 +1,7 @@
-import { parseArgs } from "node:util";
-import { options } from "./parse-args-opts";
+import { getDefaultedArgs } from "./args-parse";
 
 async function main() {
-  const args = process.argv.slice(2);
-  const { values } = parseArgs({ args, options });
+  const values = getDefaultedArgs(process.argv);
 
   if (values.help) {
     console.log(`Usage: run.sh [options]

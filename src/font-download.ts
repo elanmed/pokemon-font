@@ -2,21 +2,18 @@ import { writeFileSync } from "node:fs";
 import { GifUtil } from "gifwrap";
 import { PNG } from "pngjs";
 import { join } from "node:path";
-import { parseArgs } from "node:util";
-import { options } from "./parse-args-opts";
 import { PROCESSED_ASSETS_DIR } from "./paths";
+import { getDefaultedArgs } from "./args-parse";
 
 const privateUseAreaStart = 0x100000;
 
 async function main() {
-  const args = process.argv.slice(2);
-  const { values } = parseArgs({ args, options });
-  const animated = values.animated ?? false;
+  const args = getDefaultedArgs(process.argv);
 
   let frameOffset = 0;
   for (let id = 1; id <= 151; id++) {
     const idx = id - 1;
-    if (animated) {
+    if (args.animated) {
       const animationUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
 
       const animationRes = await fetch(animationUrl);
