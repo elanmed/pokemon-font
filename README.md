@@ -1,8 +1,10 @@
 # pokemon-font
 
-Build a TrueType font containing sprites for the first 151 Pokémon.
+Build a [TrueType](https://en.wikipedia.org/wiki/TrueType) font containing sprites for the first 151 Pokémon.
 
-Each Pokémon is mapped to a codepoint in Supplementary Private Use Area-B
+![preview](./preview.png)
+
+Each Pokemon is mapped to a codepoint in Supplementary Private Use Area-B
 starting at `U+100000`, so they can be typed like regular glyphs. Both static
 and animated (Generation V) sprites are supported.
 
