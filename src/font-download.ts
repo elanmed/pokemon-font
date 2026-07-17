@@ -39,13 +39,15 @@ async function main() {
         });
         frame.bitmap.data.copy(framePng.data);
         const framePngBuffer = Buffer.from(PNG.sync.write(framePng));
+        const croppedPngBuffer = await cropTransparentBuffer(framePngBuffer);
+
         const svg = pngToSvg({
-          png: framePngBuffer,
+          png: croppedPngBuffer,
           width: frame.bitmap.width,
           height: frame.bitmap.height,
         });
         await writeAssets({
-          png: framePngBuffer.toString(),
+          png: croppedPngBuffer.toString(),
           svg,
           offset: frameOffset,
         });
@@ -55,9 +57,10 @@ async function main() {
       const pngUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
       const pngRes = await fetch(pngUrl);
       const pngBlob = await pngRes.blob();
-      const pngArrayBuffer = await pngBlob.arrayBuffer();
-      const pngBuffer = Buffer.from(pngArrayBuffer);
-      const png = PNG.sync.read(pngBuffer);
+      const pngBuffer = Buffer.from(await pngBlob.arrayBuffer());
+      const croppedPngBuffer = await cropTransparentBuffer(pngBuffer);
+
+      const png = PNG.sync.read(croppedPngBuffer);
       const svg = pngToSvg({
         png: pngBuffer,
         width: png.width,
@@ -99,6 +102,45 @@ async function writeAssets({
     writeFile(join(PROCESSED_ASSETS_DIR, `${basename}.svg`), svg),
     writeFile(join(RAW_ASSETS_DIR, `${basename}.png`), png),
   ]);
+}
+
+async function cropTransparentBuffer(buffer: Buffer) {
+  const png = PNG.sync.read(buffer);
+
+  let minX = png.width;
+  let minY = png.height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < png.height; y++) {
+    for (let x = 0; x < png.width; x++) {
+      const idx = (png.width * y + x) << 2;
+      const alpha = png.data[idx + 3];
+
+      if (alpha !== 0) {
+        minX = Math.min(x, minX);
+        minY = Math.min(x, minY);
+        maxX = Math.max(x, maxX);
+        maxY = Math.max(x, maxY);
+      }
+    }
+  }
+
+  if (maxX === -1 || maxY === -1) {
+    return Buffer.from(PNG.sync.write(new PNG({ width: 1, height: 1 })));
+  }
+
+  const cropWidth = maxX - minX + 1;
+  const cropHeight = maxY - minY + 1;
+
+  const cropped = new PNG({
+    width: cropWidth,
+    height: cropHeight,
+  });
+
+  PNG.bitblt(png, cropped, minX, minY, cropWidth, cropHeight, 0, 0);
+
+  return Buffer.from(PNG.sync.write(cropped));
 }
 
 main();
