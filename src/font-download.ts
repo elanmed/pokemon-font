@@ -2,8 +2,9 @@ import { writeFileSync } from "node:fs";
 import { GifUtil } from "gifwrap";
 import { PNG } from "pngjs";
 import { join } from "node:path";
-import { PROCESSED_ASSETS_DIR } from "./paths";
+import { PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR } from "./paths";
 import { getDefaultedArgs } from "./args-parse";
+import { writeFile } from "node:fs/promises";
 
 const privateUseAreaStart = 0x100000;
 
@@ -35,7 +36,11 @@ async function main() {
           width: frame.bitmap.width,
           height: frame.bitmap.height,
         });
-        writeSvg({ svg, offset: frameOffset });
+        await writeAssets({
+          png: framePngBuffer.toString(),
+          svg,
+          offset: frameOffset,
+        });
         frameOffset++;
       }
     } else {
@@ -50,7 +55,7 @@ async function main() {
         width: png.width,
         height: png.height,
       });
-      writeSvg({ svg, offset: idx });
+      await writeAssets({ png: pngBuffer.toString(), svg, offset: idx });
     }
   }
 }
@@ -70,10 +75,22 @@ function pngToSvg({
 </svg>`;
 }
 
-function writeSvg({ offset, svg }: { offset: number; svg: string }) {
+async function writeAssets({
+  offset,
+  svg,
+  png,
+}: {
+  offset: number;
+  svg: string;
+  png: string;
+}) {
   const codepoint = privateUseAreaStart + offset;
   const codepointHex = codepoint.toString(16).padStart(4, "0");
-  writeFileSync(join(PROCESSED_ASSETS_DIR, `emoji_u${codepointHex}.svg`), svg);
+  const basename = `emoji_u${codepointHex}`;
+  await Promise.all([
+    writeFile(join(PROCESSED_ASSETS_DIR, `${basename}.svg`), svg),
+    writeFile(join(RAW_ASSETS_DIR, `${basename}.png`), png),
+  ]);
 }
 
 main();
