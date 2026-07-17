@@ -15,8 +15,9 @@ import assert from "node:assert";
 const args = process.argv.slice(2);
 const { values } = parseArgs({ args, options });
 
-const fontFamily = values["font-name"] ?? values.pokemon;
-assert(fontFamily);
+const animated = values.animated ?? false;
+const defaultName = animated ? "pokemon-151-animated" : "pokemon-151";
+const fontFamily = values["font-name"] ?? defaultName;
 
 const emojiSvgPaths = readdirSync(PROCESSED_ASSETS_DIR)
   .filter(

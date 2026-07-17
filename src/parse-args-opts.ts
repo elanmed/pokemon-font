@@ -1,7 +1,7 @@
 export const options = {
-  pokemon: {
-    type: "string",
-    short: "p",
+  animated: {
+    type: "boolean",
+    short: "a",
   },
   ["font-name"]: {
     type: "string",
