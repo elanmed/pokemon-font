@@ -13,6 +13,7 @@ async function main() {
   const { values } = parseArgs({ args, options });
   const animated = values.animated ?? false;
 
+  let frameOffset = 0;
   for (let id = 1; id <= 151; id++) {
     const idx = id - 1;
     if (animated) {
@@ -25,7 +26,7 @@ async function main() {
       );
       const gif = await GifUtil.read(animationArrayBuffer);
 
-      for (const [frameIdx, frame] of gif.frames.entries()) {
+      for (const frame of gif.frames) {
         const framePng = new PNG({
           width: frame.bitmap.width,
           height: frame.bitmap.height,
@@ -37,7 +38,8 @@ async function main() {
           width: frame.bitmap.width,
           height: frame.bitmap.height,
         });
-        writeSvg({ svg, offset: idx + frameIdx });
+        writeSvg({ svg, offset: frameOffset });
+        frameOffset++;
       }
     } else {
       const pngUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;

@@ -10,13 +10,12 @@ import {
   PROCESSED_ASSETS_DIR,
 } from "./paths";
 import { join } from "node:path";
-import assert from "node:assert";
 
 const args = process.argv.slice(2);
 const { values } = parseArgs({ args, options });
 
 const animated = values.animated ?? false;
-const defaultName = animated ? "pokemon-151-animated" : "pokemon-151";
+const defaultName = animated ? "Pokemon 151 (Animated)" : "Pokemon 151";
 const fontFamily = values["font-name"] ?? defaultName;
 
 const emojiSvgPaths = readdirSync(PROCESSED_ASSETS_DIR)
