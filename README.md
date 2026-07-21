@@ -1,6 +1,6 @@
 # pokemon-font
 
-Build a [TrueType](https://en.wikipedia.org/wiki/TrueType) font containing sprites for the first 151 Pokémon.
+Build a [TrueType](https://en.wikipedia.org/wiki/TrueType) font containing sprites for the first 151 Pokemon. See `dist/Pokemon 151.ttf`
 
 ![preview](./preview.png)
 
@@ -25,7 +25,7 @@ Run the whole pipeline with the included script:
 This will:
 
 1. Create a Python virtualenv and install `nanoemoji`.
-2. Download Pokémon sprites from [PokeAPI/sprites](https://github.com/PokeAPI/sprites).
+2. Download Pokemon sprites from [PokeAPI/sprites](https://github.com/PokeAPI/sprites).
 3. Convert sprites to SVGs and store them in `processed-assets/`.
 4. Build the font with `nanoemoji`.
 5. Copy the `.ttf` to `dist/`.
@@ -46,7 +46,7 @@ Pass these flags to `run.sh` or the individual `bun run` scripts:
 Examples:
 
 ```sh
-# Build an animated font
+# Build an animated font (still a WIP)
 ./run.sh --animated
 
 # Build a font with a custom name
@@ -55,7 +55,7 @@ Examples:
 
 ## Codepoint mapping
 
-Pokémon are assigned in National Pokédex order:
+Pokemon are assigned in Pokedex order:
 
 - Bulbasaur → `U+100000`
 - Ivysaur → `U+100001`
@@ -63,7 +63,7 @@ Pokémon are assigned in National Pokédex order:
 - ...
 - Mew → `U+100096`
 
-In JavaScript, you can render a specific Pokémon with `String.fromCodePoint(0x100000 + id - 1)`.
+In JavaScript, you can render a specific Pokemon with `String.fromCodePoint(0x100000 + id - 1)`.
 
 ## Scripts
 
