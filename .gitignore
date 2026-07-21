@@ -6,3 +6,4 @@ processed-assets
 raw-assets
 dist/*
 !dist/font-preview.html
+!dist/Pokemon 151.ttf
