@@ -1,5 +1,6 @@
 import { join } from "node:path";
-import { DIST_DIR } from "./paths";
+import { readFile } from "node:fs/promises";
+import { DIST_DIR, FRAME_COUNTS_PATH } from "./paths";
 import { getDefaultedArgs } from "./args-parse";
 
 const args = getDefaultedArgs(process.argv);
@@ -8,13 +9,26 @@ const port = 3000;
 
 Bun.serve({
   port,
-  fetch(request) {
+  async fetch(request) {
     const requestUrl = new URL(request.url);
-    const requestedPath =
-      requestUrl.pathname === "/"
+    const requestedPath = requestUrl.pathname.slice(1);
+
+    if (requestedPath === "preview-config.json") {
+      const frameCounts = args.animated
+        ? JSON.parse(await readFile(FRAME_COUNTS_PATH, "utf8"))
+        : [];
+      return Response.json({
+        fontFamily: args.fontFamily,
+        animated: args.animated,
+        frameCounts,
+      });
+    }
+
+    const resolvedPath =
+      requestedPath === ""
         ? "font-preview.html"
-        : decodeURIComponent(requestUrl.pathname.slice(1));
-    const filePath = join(DIST_DIR, requestedPath);
+        : decodeURIComponent(requestedPath);
+    const filePath = join(DIST_DIR, resolvedPath);
     const file = Bun.file(filePath);
     return new Response(file);
   },

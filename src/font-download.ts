@@ -1,10 +1,15 @@
 import { GifUtil } from "gifwrap";
 import { PNG } from "pngjs";
 import { join } from "node:path";
-import { PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR } from "./paths";
+import { readFile, writeFile, rm, mkdir } from "node:fs/promises";
+import {
+  PROCESSED_ASSETS_DIR,
+  RAW_ASSETS_DIR,
+  FRAME_COUNTS_PATH,
+  SPRITES_SOURCE_STATIC_DIR,
+  SPRITES_SOURCE_ANIMATED_DIR,
+} from "./paths";
 import { getDefaultedArgs } from "./args-parse";
-import { writeFile, rm } from "node:fs/promises";
-import { mkdir } from "node:fs/promises";
 
 const privateUseAreaStart = 0x100000;
 
@@ -16,6 +21,7 @@ async function resetDirectory(directoryPath: string) {
 
 async function main() {
   const args = getDefaultedArgs(process.argv);
+  const frameCountsByPokemon: number[] = [];
 
   await Promise.all([PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR].map(resetDirectory));
 
@@ -23,16 +29,13 @@ async function main() {
   for (let id = 1; id <= 151; id++) {
     const idx = id - 1;
     if (args.animated) {
-      const animationUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
-
-      const animationRes = await fetch(animationUrl);
-      const animationBlob = await animationRes.blob();
-      const animationArrayBuffer = Buffer.from(
-        await animationBlob.arrayBuffer(),
-      );
+      const animationGifPath = join(SPRITES_SOURCE_ANIMATED_DIR, `${id}.gif`);
+      const animationArrayBuffer = await readFile(animationGifPath);
       const gif = await GifUtil.read(animationArrayBuffer);
 
       for (const frame of gif.frames) {
+        frameCountsByPokemon.push(gif.frames.length);
+
         const framePng = new PNG({
           width: frame.bitmap.width,
           height: frame.bitmap.height,
@@ -54,10 +57,8 @@ async function main() {
         frameOffset++;
       }
     } else {
-      const pngUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-      const pngRes = await fetch(pngUrl);
-      const pngBlob = await pngRes.blob();
-      const pngBuffer = Buffer.from(await pngBlob.arrayBuffer());
+      const pngPath = join(SPRITES_SOURCE_STATIC_DIR, `${id}.png`);
+      const pngBuffer = await readFile(pngPath);
       const croppedPngBuffer = await cropTransparentBuffer(pngBuffer);
 
       const png = PNG.sync.read(croppedPngBuffer);
@@ -68,6 +69,10 @@ async function main() {
       });
       await writeAssets({ png: pngBuffer, svg, offset: idx });
     }
+  }
+
+  if (args.animated) {
+    await writeFile(FRAME_COUNTS_PATH, JSON.stringify(frameCountsByPokemon));
   }
 }
 
