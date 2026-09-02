@@ -10,8 +10,10 @@ import {
   SPRITES_SOURCE_ANIMATED_DIR,
 } from "./paths";
 import { getDefaultedArgs } from "./args-parse";
-
-const privateUseAreaStart = 0x100000;
+import {
+  PRIVATE_USE_AREA_START,
+  ANIMATED_FRAME_START_OFFSET,
+} from "./constants";
 
 async function resetDirectory(directoryPath: string) {
   await rm(directoryPath, { force: true, recursive: true });
@@ -25,24 +27,35 @@ async function main() {
 
   await Promise.all([PROCESSED_ASSETS_DIR, RAW_ASSETS_DIR].map(resetDirectory));
 
-  let frameOffset = 0;
   for (let id = 1; id <= 151; id++) {
     const idx = id - 1;
-    if (args.animated) {
+    const pngPath = join(SPRITES_SOURCE_STATIC_DIR, `${id}.png`);
+    const pngBuffer = await readFile(pngPath);
+    const croppedPngBuffer = await cropTransparentBuffer(pngBuffer);
+
+    const png = PNG.sync.read(croppedPngBuffer);
+    const svg = pngToSvg({
+      png: croppedPngBuffer,
+      width: png.width,
+      height: png.height,
+    });
+    await writeAssets({ png: pngBuffer, svg, offset: idx });
+  }
+
+  if (args.animated) {
+    let frameOffset = ANIMATED_FRAME_START_OFFSET;
+    for (let id = 1; id <= 151; id++) {
       const animationGifPath = join(SPRITES_SOURCE_ANIMATED_DIR, `${id}.gif`);
       const animationArrayBuffer = await readFile(animationGifPath);
       const gif = await GifUtil.read(animationArrayBuffer);
 
       for (const frame of gif.frames) {
-        frameCountsByPokemon.push(gif.frames.length);
-
         const framePng = new PNG({
           width: frame.bitmap.width,
           height: frame.bitmap.height,
         });
         frame.bitmap.data.copy(framePng.data);
         const framePngBuffer = Buffer.from(PNG.sync.write(framePng));
-        // const croppedPngBuffer = await cropTransparentBuffer(framePngBuffer);
 
         const svg = pngToSvg({
           png: framePngBuffer,
@@ -54,24 +67,13 @@ async function main() {
           svg,
           offset: frameOffset,
         });
+
         frameOffset++;
       }
-    } else {
-      const pngPath = join(SPRITES_SOURCE_STATIC_DIR, `${id}.png`);
-      const pngBuffer = await readFile(pngPath);
-      const croppedPngBuffer = await cropTransparentBuffer(pngBuffer);
 
-      const png = PNG.sync.read(croppedPngBuffer);
-      const svg = pngToSvg({
-        png: croppedPngBuffer,
-        width: png.width,
-        height: png.height,
-      });
-      await writeAssets({ png: pngBuffer, svg, offset: idx });
+      frameCountsByPokemon.push(gif.frames.length);
     }
-  }
 
-  if (args.animated) {
     await writeFile(FRAME_COUNTS_PATH, JSON.stringify(frameCountsByPokemon));
   }
 }
@@ -100,7 +102,7 @@ async function writeAssets({
   svg: string;
   png: Buffer;
 }) {
-  const codepoint = privateUseAreaStart + offset;
+  const codepoint = PRIVATE_USE_AREA_START + offset;
   const codepointHex = codepoint.toString(16).padStart(4, "0");
   const basename = `emoji_u${codepointHex}`;
   await Promise.all([
