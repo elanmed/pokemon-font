@@ -8,3 +8,4 @@ dist/*
 !dist/font-preview.html
 !dist/Pokemon 151.ttf
 !dist/Pokemon 151 (Animated).ttf
+!dist/glyphs.txt
