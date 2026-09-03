@@ -92,22 +92,18 @@ async function main() {
       // visible pixels across ALL frames for this Pokemon, and crop every
       // frame to that same shared box. Same box => same output size => no
       // jitter.
-      const sharedBoundingBox = computeUnionBoundingBox(canvasBuffers);
 
       for (const canvasBuffer of canvasBuffers) {
-        const croppedPngBuffer = cropBufferToBoundingBox(
-          canvasBuffer,
-          sharedBoundingBox,
-        );
-        const croppedPng = PNG.sync.read(croppedPngBuffer);
+        const canvasPng = PNG.sync.read(canvasBuffer);
+        const croppedPng = Buffer.from(PNG.sync.write(canvasPng));
 
         const svg = pngToSvg({
-          png: croppedPngBuffer,
-          width: croppedPng.width,
-          height: croppedPng.height,
+          png: croppedPng,
+          width: canvasPng.width,
+          height: canvasPng.height,
         });
         await writeAssets({
-          png: croppedPngBuffer,
+          png: croppedPng,
           svg,
           offset: frameOffset,
         });
@@ -358,45 +354,6 @@ function findVisibleBoundingBox(png: PNG): BoundingBox | null {
   return { minX, minY, maxX, maxY };
 }
 
-// Given multiple full-canvas PNG buffers (one per animation frame), finds
-// the single bounding box that covers every visible pixel across ALL of
-// them. This is what lets every frame of a Pokemon's animation be cropped
-// to the exact same rectangle, and therefore the exact same output
-// dimensions -- the fix for the original jitter bug.
-function computeUnionBoundingBox(buffers: Buffer[]): BoundingBox {
-  const unionBoundingBox: BoundingBox = {
-    minX: Infinity,
-    minY: Infinity,
-    maxX: -1,
-    maxY: -1,
-  };
-
-  for (const buffer of buffers) {
-    const png = PNG.sync.read(buffer);
-    const frameBoundingBox = findVisibleBoundingBox(png);
-    if (frameBoundingBox === null) continue;
-
-    unionBoundingBox.minX = Math.min(
-      unionBoundingBox.minX,
-      frameBoundingBox.minX,
-    );
-    unionBoundingBox.minY = Math.min(
-      unionBoundingBox.minY,
-      frameBoundingBox.minY,
-    );
-    unionBoundingBox.maxX = Math.max(
-      unionBoundingBox.maxX,
-      frameBoundingBox.maxX,
-    );
-    unionBoundingBox.maxY = Math.max(
-      unionBoundingBox.maxY,
-      frameBoundingBox.maxY,
-    );
-  }
-
-  return unionBoundingBox;
-}
-
 // Crops a PNG down to the given bounding box, then pads it out to a square
 // (nanoemoji/font glyphs are expected to sit in a square cell). The sprite
 // is centered horizontally and bottom-aligned vertically within that square
@@ -427,15 +384,6 @@ function cropToBoundingBox(png: PNG, boundingBox: BoundingBox) {
   );
 
   return Buffer.from(PNG.sync.write(cropped));
-}
-
-// Convenience wrapper: decode a raw PNG buffer, then crop it to a given
-// bounding box. Used for animated frames, where we already know the shared
-// bounding box up front (computed once per Pokemon via
-// computeUnionBoundingBox) and just need to apply it to each frame buffer.
-function cropBufferToBoundingBox(buffer: Buffer, boundingBox: BoundingBox) {
-  const png = PNG.sync.read(buffer);
-  return cropToBoundingBox(png, boundingBox);
 }
 
 // Used for static sprites: finds that single image's own visible bounding
