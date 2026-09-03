@@ -19,10 +19,6 @@
   <body>
     <div id="glyphContainer"></div>
     <script>
-      const privateUseAreaStart = 0x100000;
-      const totalGlyphCount = 151;
-      const frameIntervalMs = 100;
-
       async function main() {
         const configResponse = await fetch("preview-config.json");
         const config = await configResponse.json();
@@ -41,17 +37,21 @@
         sampleElement.textContent = "aA";
         glyphContainerElement.appendChild(sampleElement);
 
+        renderStaticGlyphs(glyphContainerElement, config);
+
         if (config.animated) {
-          renderAnimatedGlyphs(glyphContainerElement, config.frameCounts);
-        } else {
-          renderStaticGlyphs(glyphContainerElement);
+          renderAnimatedGlyphs(glyphContainerElement, config);
         }
       }
 
-      function renderStaticGlyphs(glyphContainerElement) {
-        for (let glyphIndex = 0; glyphIndex < totalGlyphCount; glyphIndex++) {
+      function renderStaticGlyphs(glyphContainerElement, config) {
+        for (
+          let glyphIndex = 0;
+          glyphIndex < config.totalStaticGlyphCount;
+          glyphIndex++
+        ) {
           const character = String.fromCodePoint(
-            privateUseAreaStart + glyphIndex,
+            config.privateUseAreaStart + glyphIndex,
           );
           const glyphElement = document.createElement("span");
           glyphElement.textContent = character;
@@ -59,19 +59,20 @@
         }
       }
 
-      function renderAnimatedGlyphs(glyphContainerElement, frameCounts) {
-        let pokemonFrameOffset = 0;
-        for (const frameCount of frameCounts) {
+      function renderAnimatedGlyphs(glyphContainerElement, config) {
+        const frameIntervalMs = 100;
+        let pokemonFrameOffset = config.animatedFrameStartOffset;
+        for (const frameCount of config.frameCounts) {
           const glyphElement = document.createElement("span");
           const glyphFrameOffset = pokemonFrameOffset;
           let currentFrameIndex = 0;
           glyphElement.textContent = String.fromCodePoint(
-            privateUseAreaStart + glyphFrameOffset,
+            config.privateUseAreaStart + glyphFrameOffset,
           );
           setInterval(() => {
             currentFrameIndex = (currentFrameIndex + 1) % frameCount;
             glyphElement.textContent = String.fromCodePoint(
-              privateUseAreaStart + glyphFrameOffset + currentFrameIndex,
+              config.privateUseAreaStart + glyphFrameOffset + currentFrameIndex,
             );
           }, frameIntervalMs);
           glyphContainerElement.appendChild(glyphElement);

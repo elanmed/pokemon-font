@@ -49,21 +49,28 @@ async function main() {
       const animationArrayBuffer = await readFile(animationGifPath);
       const gif = await GifUtil.read(animationArrayBuffer);
 
-      for (const frame of gif.frames) {
-        const framePng = new PNG({
-          width: frame.bitmap.width,
-          height: frame.bitmap.height,
-        });
-        frame.bitmap.data.copy(framePng.data);
-        const framePngBuffer = Buffer.from(PNG.sync.write(framePng));
+      const canvasBuffers = compositeFramesCumulatively({
+        frames: gif.frames,
+        canvasWidth: gif.width,
+        canvasHeight: gif.height,
+      });
+
+      const sharedBoundingBox = computeUnionBoundingBox(canvasBuffers);
+
+      for (const canvasBuffer of canvasBuffers) {
+        const croppedPngBuffer = cropBufferToBoundingBox(
+          canvasBuffer,
+          sharedBoundingBox,
+        );
+        const croppedPng = PNG.sync.read(croppedPngBuffer);
 
         const svg = pngToSvg({
-          png: framePngBuffer,
-          width: frame.bitmap.width,
-          height: frame.bitmap.height,
+          png: croppedPngBuffer,
+          width: croppedPng.width,
+          height: croppedPng.height,
         });
         await writeAssets({
-          png: framePngBuffer,
+          png: croppedPngBuffer,
           svg,
           offset: frameOffset,
         });
@@ -111,9 +118,115 @@ async function writeAssets({
   ]);
 }
 
-async function cropTransparentBuffer(buffer: Buffer) {
-  const png = PNG.sync.read(buffer);
+type GifFrameLike = {
+  bitmap: { width: number; height: number; data: Buffer };
+  xOffset: number;
+  yOffset: number;
+  disposalMethod: number;
+};
 
+const DISPOSAL_RESTORE_TO_BACKGROUND = 2;
+
+function compositeFramesCumulatively({
+  frames,
+  canvasWidth,
+  canvasHeight,
+}: {
+  frames: GifFrameLike[];
+  canvasWidth: number;
+  canvasHeight: number;
+}) {
+  const canvas = new PNG({ width: canvasWidth, height: canvasHeight });
+  const canvasBuffers: Buffer[] = [];
+
+  for (const frame of frames) {
+    const framePng = new PNG({
+      width: frame.bitmap.width,
+      height: frame.bitmap.height,
+    });
+    frame.bitmap.data.copy(framePng.data);
+
+    compositeOpaquePixels({
+      source: framePng,
+      destination: canvas,
+      destinationX: frame.xOffset,
+      destinationY: frame.yOffset,
+    });
+
+    canvasBuffers.push(Buffer.from(PNG.sync.write(canvas)));
+
+    if (frame.disposalMethod === DISPOSAL_RESTORE_TO_BACKGROUND) {
+      clearRegion({
+        canvas,
+        x: frame.xOffset,
+        y: frame.yOffset,
+        width: frame.bitmap.width,
+        height: frame.bitmap.height,
+      });
+    }
+  }
+
+  return canvasBuffers;
+}
+
+function compositeOpaquePixels({
+  source,
+  destination,
+  destinationX,
+  destinationY,
+}: {
+  source: PNG;
+  destination: PNG;
+  destinationX: number;
+  destinationY: number;
+}) {
+  for (let rowIndex = 0; rowIndex < source.height; rowIndex++) {
+    for (let columnIndex = 0; columnIndex < source.width; columnIndex++) {
+      const sourcePixelIndex = (source.width * rowIndex + columnIndex) << 2;
+      const sourceAlpha = source.data[sourcePixelIndex + 3];
+
+      if (sourceAlpha === 0) continue;
+
+      const destinationRow = destinationY + rowIndex;
+      const destinationColumn = destinationX + columnIndex;
+      const destinationPixelIndex =
+        (destination.width * destinationRow + destinationColumn) << 2;
+
+      destination.data[destinationPixelIndex] = source.data[sourcePixelIndex];
+      destination.data[destinationPixelIndex + 1] =
+        source.data[sourcePixelIndex + 1];
+      destination.data[destinationPixelIndex + 2] =
+        source.data[sourcePixelIndex + 2];
+      destination.data[destinationPixelIndex + 3] = sourceAlpha;
+    }
+  }
+}
+
+function clearRegion({
+  canvas,
+  x,
+  y,
+  width,
+  height,
+}: {
+  canvas: PNG;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}) {
+  for (let rowIndex = 0; rowIndex < height; rowIndex++) {
+    for (let columnIndex = 0; columnIndex < width; columnIndex++) {
+      const pixelIndex =
+        (canvas.width * (y + rowIndex) + (x + columnIndex)) << 2;
+      canvas.data[pixelIndex + 3] = 0;
+    }
+  }
+}
+
+type BoundingBox = { minX: number; minY: number; maxX: number; maxY: number };
+
+function findVisibleBoundingBox(png: PNG): BoundingBox | null {
   let minX = png.width;
   let minY = png.height;
   let maxX = -1;
@@ -134,11 +247,49 @@ async function cropTransparentBuffer(buffer: Buffer) {
   }
 
   if (maxX === -1 || maxY === -1) {
-    return Buffer.from(PNG.sync.write(new PNG({ width: 1, height: 1 })));
+    return null;
   }
 
-  const cropWidth = maxX - minX + 1;
-  const cropHeight = maxY - minY + 1;
+  return { minX, minY, maxX, maxY };
+}
+
+function computeUnionBoundingBox(buffers: Buffer[]): BoundingBox {
+  const unionBoundingBox: BoundingBox = {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -1,
+    maxY: -1,
+  };
+
+  for (const buffer of buffers) {
+    const png = PNG.sync.read(buffer);
+    const frameBoundingBox = findVisibleBoundingBox(png);
+    if (frameBoundingBox === null) continue;
+
+    unionBoundingBox.minX = Math.min(
+      unionBoundingBox.minX,
+      frameBoundingBox.minX,
+    );
+    unionBoundingBox.minY = Math.min(
+      unionBoundingBox.minY,
+      frameBoundingBox.minY,
+    );
+    unionBoundingBox.maxX = Math.max(
+      unionBoundingBox.maxX,
+      frameBoundingBox.maxX,
+    );
+    unionBoundingBox.maxY = Math.max(
+      unionBoundingBox.maxY,
+      frameBoundingBox.maxY,
+    );
+  }
+
+  return unionBoundingBox;
+}
+
+function cropToBoundingBox(png: PNG, boundingBox: BoundingBox) {
+  const cropWidth = boundingBox.maxX - boundingBox.minX + 1;
+  const cropHeight = boundingBox.maxY - boundingBox.minY + 1;
   const cropSquare = Math.max(cropWidth, cropHeight);
 
   const cropped = new PNG({
@@ -149,9 +300,34 @@ async function cropTransparentBuffer(buffer: Buffer) {
   const destX = Math.floor((cropSquare - cropWidth) / 2);
   const destY = cropSquare - cropHeight;
 
-  PNG.bitblt(png, cropped, minX, minY, cropWidth, cropHeight, destX, destY);
+  PNG.bitblt(
+    png,
+    cropped,
+    boundingBox.minX,
+    boundingBox.minY,
+    cropWidth,
+    cropHeight,
+    destX,
+    destY,
+  );
 
   return Buffer.from(PNG.sync.write(cropped));
+}
+
+function cropBufferToBoundingBox(buffer: Buffer, boundingBox: BoundingBox) {
+  const png = PNG.sync.read(buffer);
+  return cropToBoundingBox(png, boundingBox);
+}
+
+async function cropTransparentBuffer(buffer: Buffer) {
+  const png = PNG.sync.read(buffer);
+  const boundingBox = findVisibleBoundingBox(png);
+
+  if (boundingBox === null) {
+    return Buffer.from(PNG.sync.write(new PNG({ width: 1, height: 1 })));
+  }
+
+  return cropToBoundingBox(png, boundingBox);
 }
 
 main();
