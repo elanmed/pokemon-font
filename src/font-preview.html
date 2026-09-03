@@ -19,10 +19,20 @@
   <body>
     <div id="glyphContainer"></div>
     <script>
+      // Entry point, runs once the page loads. Fetches the build-time
+      // config (font name, whether this is an animated build, and per-
+      // Pokemon frame counts), loads the font, then renders the glyphs.
       async function main() {
+        // preview-config.json is served dynamically by font-preview.ts
+        // (not a static file), so it always reflects the flags the preview
+        // server was started with (e.g. --animated).
         const configResponse = await fetch("preview-config.json");
         const config = await configResponse.json();
 
+        // Load the font via the FontFace API instead of relying purely on
+        // @font-face in CSS, so we can `await` it: this guarantees the font
+        // is actually ready before we start rendering glyph characters,
+        // avoiding a flash of fallback-font boxes/tofu.
         const previewFont = new FontFace(
           config.fontFamily,
           `url("${config.fontFamily}.ttf")`,
@@ -31,19 +41,31 @@
         document.fonts.add(previewFont);
 
         const glyphContainerElement = document.getElementById("glyphContainer");
+        // Font family name isn't known until runtime (it depends on
+        // --font-name), so it's set here rather than hardcoded in the
+        // <style> block.
         glyphContainerElement.style.fontFamily = `"${config.fontFamily}", sans-serif`;
 
+        // A plain "aA" sample renders using the fallback/system font
+        // (sans-serif), giving a quick visual reference point next to the
+        // Pokemon glyphs.
         const sampleElement = document.createElement("span");
         sampleElement.textContent = "aA";
         glyphContainerElement.appendChild(sampleElement);
 
+        // Static glyphs (codepoints 0..150) are always present, regardless
+        // of whether this was an animated build.
         renderStaticGlyphs(glyphContainerElement, config);
 
+        // Animated frames only exist, and config.frameCounts is only
+        // populated, when the font was built with --animated.
         if (config.animated) {
           renderAnimatedGlyphs(glyphContainerElement, config);
         }
       }
 
+      // Renders one <span> per static Pokemon glyph, in Pokedex order,
+      // starting at config.privateUseAreaStart.
       function renderStaticGlyphs(glyphContainerElement, config) {
         for (
           let glyphIndex = 0;
@@ -59,23 +81,47 @@
         }
       }
 
+      // Renders one <span> per Pokemon's animation, cycling that span's
+      // character through its own range of frame codepoints on a timer, so
+      // each glyph plays its animation independently.
       function renderAnimatedGlyphs(glyphContainerElement, config) {
         const frameIntervalMs = 100;
+
+        // Tracks where in the codepoint space the *next* Pokemon's frames
+        // start. Starts at animatedFrameStartOffset (== 151, right after
+        // the static glyphs) and advances by each Pokemon's frameCount as
+        // we go, since frame counts vary per Pokemon and aren't evenly
+        // spaced.
         let pokemonFrameOffset = config.animatedFrameStartOffset;
+
         for (const frameCount of config.frameCounts) {
           const glyphElement = document.createElement("span");
+
+          // Captured per-iteration so each glyph's setInterval callback
+          // (below) always points at *this* Pokemon's frame range, not
+          // whatever pokemonFrameOffset happens to be by the time the
+          // callback runs.
           const glyphFrameOffset = pokemonFrameOffset;
           let currentFrameIndex = 0;
+
+          // Show frame 0 immediately, before the first interval tick.
           glyphElement.textContent = String.fromCodePoint(
             config.privateUseAreaStart + glyphFrameOffset,
           );
+
+          // Every frameIntervalMs, advance to the next frame, wrapping back
+          // to 0 once we've cycled through all of this Pokemon's frames.
           setInterval(() => {
             currentFrameIndex = (currentFrameIndex + 1) % frameCount;
             glyphElement.textContent = String.fromCodePoint(
               config.privateUseAreaStart + glyphFrameOffset + currentFrameIndex,
             );
           }, frameIntervalMs);
+
           glyphContainerElement.appendChild(glyphElement);
+
+          // Advance the running offset so the next Pokemon in the loop
+          // starts right after this one's last frame.
           pokemonFrameOffset += frameCount;
         }
       }
