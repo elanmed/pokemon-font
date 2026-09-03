@@ -84,15 +84,6 @@ async function main() {
         canvasHeight: gif.height,
       });
 
-      // Even after compositing onto the full canvas, that canvas is often
-      // much bigger than the actual sprite (mostly transparent padding).
-      // If we cropped each frame to its *own* visible bounding box, frames
-      // would end up different sizes again (the jitter problem would come
-      // right back). So instead we compute ONE bounding box that covers the
-      // visible pixels across ALL frames for this Pokemon, and crop every
-      // frame to that same shared box. Same box => same output size => no
-      // jitter.
-
       for (const canvasBuffer of canvasBuffers) {
         const canvasPng = PNG.sync.read(canvasBuffer);
         const croppedPng = Buffer.from(PNG.sync.write(canvasPng));
